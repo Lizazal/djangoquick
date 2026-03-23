@@ -2,3 +2,7 @@
 .idea/
 
 **cache**
+
+*.sqlite3
+
+*/migrations/*.py
