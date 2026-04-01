@@ -21,3 +21,13 @@ class StoragePermission(BasePermission):
         if request.method in SAFE_METHODS:
             return user.company_id == obj.company_id
         return hasattr(user, 'owned_company') and obj.company_id == user.owned_company.id
+
+
+class CompanyMemberPermission(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_authenticated and request.user.company_id == obj.company_id
+
+
+class ProductPermission(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_authenticated and request.user.company_id == obj.storage.company_id
