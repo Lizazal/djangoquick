@@ -3,7 +3,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 from .models import Company, Storage, Supplier, Product, Supply
-from .permissions import CompanyPermission, StoragePermission, CompanyMemberPermission, ProductPermission
+from .permissions import CompanyPermission, StoragePermission, CompanyMemberPermission, ProductPermission, IsCompanyOwnerPermission
 from .serializers import CompanySerializer, StorageSerializer, SupplierSerializer, ProductSerializer, SupplySerializer, AttachEmployeeSerializer
 
 

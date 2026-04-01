@@ -31,3 +31,8 @@ class CompanyMemberPermission(BasePermission):
 class ProductPermission(BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.user.is_authenticated and request.user.company_id == obj.storage.company_id
+
+
+class IsCompanyOwnerPermission(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.is_company_owner
