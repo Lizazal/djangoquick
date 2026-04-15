@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Company, Storage, Supplier, Product, Supply, SupplyProduct
+from .models import Company, Storage, Supplier, Product, Supply, SupplyProduct, Sale, ProductSale
 
 
 @admin.register(Company)
@@ -35,3 +35,20 @@ class SupplyAdmin(admin.ModelAdmin):
 @admin.register(SupplyProduct)
 class SupplyProductAdmin(admin.ModelAdmin):
     list_display = ('supply', 'product', 'quantity')
+
+
+class ProductSaleInline(admin.TabularInline):
+    model = ProductSale
+    extra = 1
+
+
+@admin.register(Sale)
+class SaleAdmin(admin.ModelAdmin):
+    list_display = ('id', 'buyer_name', 'company', 'sale_date')
+    search_fields = ('buyer_name',)
+    inlines = [ProductSaleInline]
+
+
+@admin.register(ProductSale)
+class ProductSaleAdmin(admin.ModelAdmin):
+    list_display = ('sale', 'product', 'quantity')

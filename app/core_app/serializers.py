@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Company, Storage, Supplier, Product, Supply, SupplyProduct
+from .models import Company, Storage, Supplier, Product, Supply, SupplyProduct, Sale, ProductSale
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -172,3 +172,66 @@ class AttachEmployeeSerializer(serializers.Serializer):
         user.company = self.context['request'].user.company
         user.save(update_fields=['company'])
         return user
+
+
+class ProductSaleInputSerializer(serializers.Serializer):
+    product = serializers.IntegerField()
+    quantity = serializers.IntegerField(min_value=1)
+
+
+class SaleSerializer(serializers.ModelSerializer):
+    product_sales = ProductSaleInputSerializer(many=True, write_only=True)
+
+    class Meta:
+        model = Sale
+        fields = ('id', 'buyer_name', 'sale_date', 'product_sales')
+        read_only_fields = ('id', 'sale_date')
+
+    def validate(self, attrs):
+        user = self.context['request'].user
+        product_sales = attrs.get('product_sales', [])
+        if not product_sales:
+            raise serializers.ValidationError('Продажа должна содержать хотя бы один товар.')
+        errors = {}
+        checked_products = []
+        for item in product_sales:
+            product = Product.objects.filter(id=item['product']).first()
+            if not product:
+                raise serializers.ValidationError(f"id={item['product']} не найден.")
+            if product.storage.company_id != user.company_id:
+                raise serializers.ValidationError(f"{product.title} не принадлежит компании пользователя.")
+            if item['quantity'] > product.quantity:
+                errors[product.title] = product.quantity
+            checked_products.append((product, item['quantity']))
+        if errors:
+            raise serializers.ValidationError(errors)
+        attrs['checked_products'] = checked_products
+        return attrs
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        checked_products = validated_data.pop('checked_products')
+        validated_data.pop('product_sales')
+        sale = Sale.objects.create(company=user.company, **validated_data)
+        for product, quantity in checked_products:
+            ProductSale.objects.create(sale=sale, product=product, quantity=quantity)
+            product.quantity -= quantity
+            product.save(update_fields=['quantity'])
+        return sale
+
+
+class SaleListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Sale
+        fields = ('id', 'buyer_name', 'sale_date', 'company')
+
+
+class SaleUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Sale
+        fields = ('buyer_name', 'sale_date')
+
+    def validate(self, attrs):
+        if 'product_sales' in self.initial_data:
+            raise serializers.ValidationError('Нельзя изменять товары в продаже.')
+        return attrs

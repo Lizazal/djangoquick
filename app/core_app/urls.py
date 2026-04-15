@@ -1,7 +1,8 @@
 from django.urls import path
 from .views import (CompanyCreateView, CompanyDetailView, StorageCreateView, StorageDetailView,
                     SupplierListCreateView, SupplierDetailView, ProductListCreateView,
-                    ProductDetailView, SupplyListCreateView, AttachEmployeeView,)
+                    ProductDetailView, SupplyListCreateView, AttachEmployeeView,
+                    SaleListCreateView, SaleDetailView)
 
 urlpatterns = [
     path('companies/create/', CompanyCreateView.as_view(), name='company-create'),
@@ -14,4 +15,6 @@ urlpatterns = [
     path('products/<int:pk>/', ProductDetailView.as_view(), name='product-detail'),
     path('supplies/', SupplyListCreateView.as_view(), name='supply-list-create'),
     path('companies/attach/', AttachEmployeeView.as_view(), name='attach-employee'),
+    path('sales/', SaleListCreateView.as_view(), name='sale-list-create'),
+    path('sales/<int:pk>/', SaleDetailView.as_view(), name='sale-detail'),
 ]

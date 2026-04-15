@@ -2,9 +2,9 @@ from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
-from .models import Company, Storage, Supplier, Product, Supply
+from .models import Company, Storage, Supplier, Product, Supply, Sale
 from .permissions import CompanyPermission, StoragePermission, CompanyMemberPermission, ProductPermission, IsCompanyOwnerPermission
-from .serializers import CompanySerializer, StorageSerializer, SupplierSerializer, ProductSerializer, SupplySerializer, AttachEmployeeSerializer
+from .serializers import CompanySerializer, StorageSerializer, SupplierSerializer, ProductSerializer, SupplySerializer, AttachEmployeeSerializer, SaleSerializer, SaleListSerializer, SaleUpdateSerializer
 
 
 class CompanyCreateView(generics.CreateAPIView):
@@ -104,3 +104,37 @@ class AttachEmployeeView(generics.GenericAPIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class SaleListCreateView(generics.ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Sale.objects.filter(company=self.request.user.company)
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return SaleListSerializer
+        return SaleSerializer
+
+    def perform_create(self, serializer):
+        if self.request.user.company is None:
+            raise PermissionDenied('Пользователь не привязан к компании.')
+        serializer.save()
+
+
+class SaleDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Sale.objects.all()
+    permission_classes = [CompanyMemberPermission]
+
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return SaleUpdateSerializer
+        return SaleListSerializer
+
+    def perform_destroy(self, instance):
+        for product_sale in instance.product_sales.all():
+            product = product_sale.product
+            product.quantity += product_sale.quantity
+            product.save(update_fields=['quantity'])
+        instance.delete()

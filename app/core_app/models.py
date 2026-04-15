@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 
 class Company(models.Model):
@@ -114,6 +115,52 @@ class SupplyProduct(models.Model):
     class Meta:
         verbose_name = 'Товар в поставке'
         verbose_name_plural = 'Товары в поставке'
+
+    def __str__(self):
+        return f'{self.product.title} — {self.quantity}'
+
+
+class Sale(models.Model):
+    buyer_name = models.CharField('Имя покупателя', max_length=255)
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='sales',
+        verbose_name='Компания'
+    )
+    sale_date = models.DateTimeField('Дата продажи', default=timezone.now)
+    products = models.ManyToManyField(
+        Product,
+        through='ProductSale',
+        related_name='sales'
+    )
+
+    class Meta:
+        verbose_name = 'Продажа'
+        verbose_name_plural = 'Продажи'
+
+    def __str__(self):
+        return f'Продажа №{self.id} — {self.buyer_name}'
+
+
+class ProductSale(models.Model):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='product_sales',
+        verbose_name='Товар'
+    )
+    sale = models.ForeignKey(
+        Sale,
+        on_delete=models.CASCADE,
+        related_name='product_sales',
+        verbose_name='Продажа'
+    )
+    quantity = models.IntegerField('Количество')
+
+    class Meta:
+        verbose_name = 'Товар в продаже'
+        verbose_name_plural = 'Товары в продаже'
 
     def __str__(self):
         return f'{self.product.title} — {self.quantity}'
